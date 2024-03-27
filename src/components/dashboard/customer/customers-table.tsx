@@ -1,63 +1,153 @@
+/* eslint-disable react/no-unstable-nested-components */
 'use client';
 
 import * as React from 'react';
-import Avatar from '@mui/material/Avatar';
+import { Avatar, TableCell } from '@mui/material';
+// import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
-import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
 import dayjs from 'dayjs';
 
+import { type TableColumnInterface } from '@/types/common';
+import useFetchData from '@/hooks/use-fetch';
 import { useSelection } from '@/hooks/use-selection';
+import { TableComponent } from '@/components/table/Table';
+import { formatVndCurrency } from '@/utils/format';
 
 function noop(): void {
   // do nothing
 }
 
-export interface Customer {
-  id: string;
-  avatar: string;
-  name: string;
-  email: string;
-  address: { city: string; state: string; country: string; street: string };
-  phone: string;
-  createdAt: Date;
+export interface Product {
+  id: number;
+  title: string;
+  slug: string;
+  thumbnail: string;
+  description: string;
+  price: string;
+  discount_price: string;
 }
 
-interface CustomersTableProps {
-  count?: number;
-  page?: number;
-  rows?: Customer[];
-  rowsPerPage?: number;
-}
+export function CustomersTable(): React.JSX.Element {
+  const { data: products } = useFetchData<{ data: Product[]; total: number; }>('/products', 'GET');
 
-export function CustomersTable({
-  count = 0,
-  rows = [],
-  page = 0,
-  rowsPerPage = 0,
-}: CustomersTableProps): React.JSX.Element {
   const rowIds = React.useMemo(() => {
-    return rows.map((customer) => customer.id);
-  }, [rows]);
+    return (products?.data || []).map((customer) => customer.id);
+  }, [products?.data]);
 
   const { selectAll, deselectAll, selectOne, deselectOne, selected } = useSelection(rowIds);
 
-  const selectedSome = (selected?.size ?? 0) > 0 && (selected?.size ?? 0) < rows.length;
-  const selectedAll = rows.length > 0 && selected?.size === rows.length;
+  const selectedSome = (selected?.size ?? 0) > 0 && (selected?.size ?? 0) < (products?.data || []).length;
+  const selectedAll = (products?.data || []).length > 0 && selected?.size === (products?.data || []).length;
+
+  const columns: TableColumnInterface[] = [
+    {
+      id: 'id',
+      label: '',
+      content: (_value: string) => (
+        <TableCell padding="checkbox">
+          <Checkbox
+            checked={selectedAll}
+            indeterminate={selectedSome}
+            onChange={(event) => {
+              if (event.target.checked) {
+                selectAll();
+              } else {
+                deselectAll();
+              }
+            }}
+          />
+        </TableCell>
+      ),
+    },
+    {
+      id: 'title',
+      label: 'Tên sản phẩm',
+    },
+    {
+      id: 'slug',
+      label: 'Slug',
+    },
+    {
+      id: 'thumbnail',
+      label: 'Hình ảnh',
+    },
+    {
+      id: 'price',
+      label: 'Giá gốc',
+    },
+    {
+      id: 'discount_price',
+      label: 'Giá đã giảm',
+    },
+    {
+      id: 'created_at',
+      label: 'Ngày tạo sản phẩm'
+    }
+  ];
+
+  const dataFormatted = [
+    {
+      key: 'id',
+      content: (value: number) => {
+        const isSelected = selected?.has(value);
+        return (
+          <TableCell padding="checkbox">
+            <Checkbox
+              value={value}
+              onChange={(event) => {
+                if (event.target.checked) {
+                  selectOne(value);
+                } else {
+                  deselectOne(value);
+                }
+              }}
+              checked={isSelected}
+            />
+          </TableCell>
+        );
+      },
+    },
+    {
+      key: 'title',
+      content: (value: string) => <TableCell>{value}</TableCell>,
+    },
+    {
+      key: 'slug',
+      content: (value: string) => <TableCell>{value}</TableCell>,
+    },
+    {
+      key: 'thumbnail',
+      content: (value: string, title: string) => (
+        <TableCell>
+          <Avatar src={value} alt={title} />
+        </TableCell>
+      ),
+    },
+    {
+      key: 'price',
+      content: (value: string) => <TableCell>{formatVndCurrency(Number(value))}</TableCell>,
+    },
+    {
+      key: 'discount_price',
+      content: (value: string) => <TableCell>{formatVndCurrency(Number(value))}</TableCell>,
+    },
+    {
+      key: 'created_at',
+      content: (value: string) => <TableCell>{dayjs(value).format('MMM D, YYYY')}</TableCell>,
+    },
+  ];
 
   return (
     <Card>
       <Box sx={{ overflowX: 'auto' }}>
-        <Table sx={{ minWidth: '800px' }}>
+        {products?.data ? (
+          <TableComponent columns={columns} dataFormatted={dataFormatted} data={products?.data ?? []} />
+        ) : null}
+        {/* <Table sx={{ minWidth: '800px' }}>
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox">
@@ -114,16 +204,16 @@ export function CustomersTable({
               );
             })}
           </TableBody>
-        </Table>
+        </Table> */}
       </Box>
       <Divider />
       <TablePagination
         component="div"
-        count={count}
+        count={products?.total ?? 0}
         onPageChange={noop}
         onRowsPerPageChange={noop}
-        page={page}
-        rowsPerPage={rowsPerPage}
+        page={0}
+        rowsPerPage={10}
         rowsPerPageOptions={[5, 10, 25]}
       />
     </Card>
