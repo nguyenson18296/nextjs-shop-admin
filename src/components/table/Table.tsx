@@ -39,9 +39,9 @@ export function TableComponent({ columns, dataFormatted, data }: TableComponentI
             {data?.map((item: TableRow) => {
               return (
                 <TableRow key={item.id}>
-                  {dataFormatted.map((f) => (
-                    f.content(item[f.key] as string)
-                  ))}
+                  {dataFormatted.map((f) => {
+                    return f.content(item[f.key] as string, item.id)
+                  })}
                 </TableRow>
               );
             })}

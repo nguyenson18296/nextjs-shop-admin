@@ -31,7 +31,6 @@ export function useSelection<T = string>(keys: T[] = []): Selection<T> {
   }, []);
 
   const handleSelectAll = React.useCallback(() => {
-    console.log("kkkk");
     setSelected(new Set(keys));
   }, [keys]);
 

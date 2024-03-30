@@ -13,7 +13,7 @@ interface UseFetchDataResponse<T> {
   fetchData: () => Promise<void>;
 }
 
-function useFetchData<T = unknown>(url: string, method: HTTPMethod): UseFetchDataResponse<T> {
+function useFetchData<T = unknown>(url: string, method: HTTPMethod = 'GET'): UseFetchDataResponse<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [status, setStatus] = useState<Status>('idle');
