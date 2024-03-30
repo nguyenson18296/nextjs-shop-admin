@@ -22,7 +22,6 @@ import { TableComponent } from '@/components/table/Table';
 
 import { ProductFormDialog } from './products-form-dialog';
 import { type CategoryInterface } from '@/utils/constants';
-import SimpleSnackbar from '@/components/AlertMessage/AlertMessage';
 
 function noop(): void {
   // do nothing
@@ -191,7 +190,7 @@ export function CustomersTable(): React.JSX.Element {
   return (
     <>
       {selectedProduct && openEdit ? (
-        <ProductFormDialog open={openEdit} handleClose={handleCloseModal} product={selectedProduct} />
+        <ProductFormDialog isEdit open={openEdit} handleClose={handleCloseModal} product={selectedProduct} />
       ) : null}
       <Card>
         <Box sx={{ overflowX: 'auto' }}>
