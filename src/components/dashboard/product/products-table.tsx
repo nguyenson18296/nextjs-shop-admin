@@ -2,12 +2,16 @@
 'use client';
 
 import * as React from 'react';
+import { formatVndCurrency } from '@/utils/format';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import { Avatar, TableCell } from '@mui/material';
-// import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Checkbox from '@mui/material/Checkbox';
+import { pink } from '@mui/material/colors';
 import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
 import TablePagination from '@mui/material/TablePagination';
 import dayjs from 'dayjs';
 
@@ -15,13 +19,16 @@ import { type TableColumnInterface } from '@/types/common';
 import useFetchData from '@/hooks/use-fetch';
 import { useSelection } from '@/hooks/use-selection';
 import { TableComponent } from '@/components/table/Table';
-import { formatVndCurrency } from '@/utils/format';
+
+import { ProductFormDialog } from './products-form-dialog';
+import { type CategoryInterface } from '@/utils/constants';
+import SimpleSnackbar from '@/components/AlertMessage/AlertMessage';
 
 function noop(): void {
   // do nothing
 }
 
-export interface Product {
+export interface ProductInterface {
   id: number;
   title: string;
   slug: string;
@@ -29,10 +36,13 @@ export interface Product {
   description: string;
   price: string;
   discount_price: string;
+  category?: CategoryInterface;
 }
 
 export function CustomersTable(): React.JSX.Element {
-  const { data: products } = useFetchData<{ data: Product[]; total: number; }>('/products', 'GET');
+  const { data: products } = useFetchData<{ data: ProductInterface[]; total: number }>('/products', 'GET');
+  const [openEdit, setOpenEdit] = React.useState(false);
+  const [selectedProduct, setSelectedProduct] = React.useState<ProductInterface>();
 
   const rowIds = React.useMemo(() => {
     return (products?.data || []).map((customer) => customer.id);
@@ -85,8 +95,12 @@ export function CustomersTable(): React.JSX.Element {
     },
     {
       id: 'created_at',
-      label: 'Ngày tạo sản phẩm'
-    }
+      label: 'Ngày tạo sản phẩm',
+    },
+    {
+      id: 'action',
+      label: 'Thao tác',
+    },
   ];
 
   const dataFormatted = [
@@ -139,83 +153,63 @@ export function CustomersTable(): React.JSX.Element {
       key: 'created_at',
       content: (value: string) => <TableCell>{dayjs(value).format('MMM D, YYYY')}</TableCell>,
     },
+    {
+      key: 'actions',
+      content: (value: string, id: number) => (
+        <TableCell sx={{ display: 'flex' }}>
+          <IconButton
+            aria-label="edit"
+            onClick={() => {
+              onSelectedProduct(id);
+            }}
+          >
+            <EditIcon color="primary" />
+          </IconButton>
+          <IconButton aria-label="delete">
+            <DeleteIcon sx={{ color: pink[500] }} />
+          </IconButton>
+        </TableCell>
+      ),
+    },
   ];
 
-  return (
-    <Card>
-      <Box sx={{ overflowX: 'auto' }}>
-        {products?.data ? (
-          <TableComponent columns={columns} dataFormatted={dataFormatted} data={products?.data ?? []} />
-        ) : null}
-        {/* <Table sx={{ minWidth: '800px' }}>
-          <TableHead>
-            <TableRow>
-              <TableCell padding="checkbox">
-                <Checkbox
-                  checked={selectedAll}
-                  indeterminate={selectedSome}
-                  onChange={(event) => {
-                    if (event.target.checked) {
-                      selectAll();
-                    } else {
-                      deselectAll();
-                    }
-                  }}
-                />
-              </TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Location</TableCell>
-              <TableCell>Phone</TableCell>
-              <TableCell>Signed Up</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.map((row) => {
-              const isSelected = selected?.has(row.id);
+  const handleCloseModal = React.useCallback(() => {
+    setOpenEdit(false);
+  }, []);
 
-              return (
-                <TableRow hover key={row.id} selected={isSelected}>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      checked={isSelected}
-                      onChange={(event) => {
-                        if (event.target.checked) {
-                          selectOne(row.id);
-                        } else {
-                          deselectOne(row.id);
-                        }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
-                      <Avatar src={row.avatar} />
-                      <Typography variant="subtitle2">{row.name}</Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>{row.email}</TableCell>
-                  <TableCell>
-                    {row.address.city}, {row.address.state}, {row.address.country}
-                  </TableCell>
-                  <TableCell>{row.phone}</TableCell>
-                  <TableCell>{dayjs(row.createdAt).format('MMM D, YYYY')}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table> */}
-      </Box>
-      <Divider />
-      <TablePagination
-        component="div"
-        count={products?.total ?? 0}
-        onPageChange={noop}
-        onRowsPerPageChange={noop}
-        page={0}
-        rowsPerPage={10}
-        rowsPerPageOptions={[5, 10, 25]}
-      />
-    </Card>
+  const onSelectedProduct = React.useCallback(
+    (productId: number) => {
+      setOpenEdit(true);
+      const foundProduct = products?.data.find((item) => item.id === productId);
+      if (foundProduct) {
+        setSelectedProduct(foundProduct);
+      }
+    },
+    [products?.data]
+  );
+
+  return (
+    <>
+      {selectedProduct && openEdit ? (
+        <ProductFormDialog open={openEdit} handleClose={handleCloseModal} product={selectedProduct} />
+      ) : null}
+      <Card>
+        <Box sx={{ overflowX: 'auto' }}>
+          {products?.data ? (
+            <TableComponent columns={columns} dataFormatted={dataFormatted} data={products?.data ?? []} />
+          ) : null}
+        </Box>
+        <Divider />
+        <TablePagination
+          component="div"
+          count={products?.total ?? 0}
+          onPageChange={noop}
+          onRowsPerPageChange={noop}
+          page={0}
+          rowsPerPage={10}
+          rowsPerPageOptions={[5, 10, 25]}
+        />
+      </Card>
+    </>
   );
 }
