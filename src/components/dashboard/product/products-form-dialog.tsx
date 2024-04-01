@@ -54,8 +54,6 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
     message: ''
   })
 
-  console.log("formState", formState.errors['title']);
-
   const onUploadNewThumbnail = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const file = event?.target?.files[0];
@@ -77,21 +75,16 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
         if (typeof value === 'string') {
           formData.append(key, value);
         } else if (value instanceof Blob) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           formData.append(key, value, value.name);
         }
       }
       // Append all keys and their corresponding values from the data object
       try {
-        const response = await fetch(`${BASE_URL}/products`, {
+        await fetch(`${BASE_URL}/products`, {
           method: 'POST',
-          // headers: {
-          //   Accept: 'application/json',
-          //   'Content-Type': 'multipart/form-data',
-          // },
           body: formData,
         });
-        const data = await response.json();
-        console.log("data", data);
         setEditState({
           color: 'success',
           show: true,
@@ -102,7 +95,7 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
         setEditState({
           color: 'error',
           show: true,
-          message: 'Cập nhật sản phẩm thất bại'
+          message: 'Tạo sản phẩm thất bại'
         })
         // Handle upload error
       }
@@ -111,14 +104,18 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
   const onEdit: SubmitHandler<TFormInput> = useCallback(
     async (submitData) => {
       // Append all keys and their corresponding values from the data object
+      const data = {
+        ...submitData,
+        user_id: 2
+      };
       try {
-        await fetch(`${BASE_URL}/products/${product.id.toString()}`, {
+        await fetch(`${BASE_URL}/products/${product?.id.toString() || ''}`, {
           method: 'PUT',
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(submitData),
+          body: JSON.stringify(data),
         });
         setEditState({
           color: 'success',
