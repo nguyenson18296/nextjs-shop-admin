@@ -14,14 +14,16 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import TablePagination from '@mui/material/TablePagination';
 import dayjs from 'dayjs';
+import io from 'socket.io-client';
 
 import { type TableColumnInterface } from '@/types/common';
 import useFetchData from '@/hooks/use-fetch';
 import { useSelection } from '@/hooks/use-selection';
 import { TableComponent } from '@/components/table/Table';
-
 import { ProductFormDialog } from './products-form-dialog';
-import { type CategoryInterface } from '@/utils/constants';
+import { BASE_URL, type CategoryInterface } from '@/utils/constants';
+import { useAppDispatch } from '@/hooks/use-redux';
+import { updateNewNotification, type NotificationInterface } from '@/lib/store/notifications.slice';
 
 function noop(): void {
   // do nothing
@@ -42,6 +44,7 @@ export function CustomersTable(): React.JSX.Element {
   const { data: products } = useFetchData<{ data: ProductInterface[]; total: number }>('/products', 'GET');
   const [openEdit, setOpenEdit] = React.useState(false);
   const [selectedProduct, setSelectedProduct] = React.useState<ProductInterface>();
+  const dispatch = useAppDispatch();
 
   const rowIds = React.useMemo(() => {
     return (products?.data || []).map((customer) => customer.id);
@@ -51,6 +54,23 @@ export function CustomersTable(): React.JSX.Element {
 
   const selectedSome = (selected?.size ?? 0) > 0 && (selected?.size ?? 0) < (products?.data || []).length;
   const selectedAll = (products?.data || []).length > 0 && selected?.size === (products?.data || []).length;
+
+  React.useEffect(() => {
+    // Initialize WebSocket connection
+    const socket = io(BASE_URL); // Use your server's address
+    
+    // Setup event listener for 'notification' events
+    socket.on('notificationToClient', (notificationData: NotificationInterface) => {
+      dispatch(updateNewNotification(notificationData));
+      // Handle notification data (e.g., display a notification)
+    });
+
+    // Cleanup on component unmount
+    return () => {
+      socket.off('notification');
+      socket.close();
+    };
+  }, [dispatch]); // Empty dependency array means this effect runs once on mount
 
   const columns: TableColumnInterface[] = [
     {
