@@ -6,11 +6,18 @@ import MenuItem from '@mui/material/MenuItem';
 import { alpha, styled } from '@mui/material/styles';
 import Tooltip from '@mui/material/Tooltip';
 import { Bell as BellIcon } from '@phosphor-icons/react/dist/ssr/Bell';
+import dayjs from 'dayjs';
 
-import { BASE_URL } from '@/utils/constants';
 import { getNotifications } from '@/lib/store/notifications.slice';
 import { type NotificationResponseInterface } from './notificationType';
 import { useAppDispatch, useAppSelector } from '@/hooks/use-redux';
+import useFetchData from '@/hooks/use-fetch';
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
+const relativeTime = require('dayjs/plugin/relativeTime');
+
+// eslint-disable-next-line import/no-named-as-default-member, @typescript-eslint/no-unsafe-argument
+dayjs.extend(relativeTime);
 
 const StyledMenu = styled((props: MenuProps) => (
   <Menu
@@ -37,6 +44,7 @@ const StyledMenu = styled((props: MenuProps) => (
       padding: '4px 0',
     },
     '& .MuiMenuItem-root': {
+      display: 'block',
       '& .MuiSvgIcon-root': {
         fontSize: 18,
         color: theme.palette.text.secondary,
@@ -45,6 +53,9 @@ const StyledMenu = styled((props: MenuProps) => (
       '&:hover': {
         backgroundColor: 'steelblue',
       },
+      '& .time-created': {
+        fontSize: '12px'
+      }
     },
     '& .MuiMenuItem-root.active': {
       backgroundColor: alpha(theme.palette.primary.dark, theme.palette.action.selectedOpacity),
@@ -61,6 +72,7 @@ export default function NotificationsComponent(): React.JSX.Element {
   const open = Boolean(anchorEl);
   const dispatch = useAppDispatch();
   const notifications = useAppSelector(state => state.notification.notifications);
+  const { data } = useFetchData<{ data: NotificationResponseInterface['data'] }>('/notifications', 'GET');
 
   const handleClick = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorEl(event.currentTarget);
@@ -71,19 +83,14 @@ export default function NotificationsComponent(): React.JSX.Element {
 
   const getMyNotification = React.useCallback(async () => {
     try {
-      const response = await fetch(`${BASE_URL}/notifications/2`, {
-        method: "GET"
-      })
-      const data = await response.json() as NotificationResponseInterface;
-      if (data.success) {
-        const notification = data.data;
-        dispatch(getNotifications(notification));
+      if (data?.data) {
+        dispatch(getNotifications(data.data));
       }
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
     }
-  }, [dispatch]);
+  }, [dispatch, data]);
 
   React.useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -115,7 +122,9 @@ export default function NotificationsComponent(): React.JSX.Element {
             <p>
               {noti.message}
             </p>
-            <hr />
+            <span className='time-created'>
+              {dayjs(noti.created_at).fromNow()}
+            </span>
           </MenuItem>
         ))}
       </StyledMenu>

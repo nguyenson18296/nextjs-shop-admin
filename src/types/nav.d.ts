@@ -13,3 +13,9 @@ export interface NavItemConfig {
   // can extend it to accept multiple matchers.
   matcher?: { type: 'startsWith' | 'equals'; href: string };
 }
+
+declare module 'dayjs' {
+  interface Dayjs {
+      fromNow();
+  }
+}

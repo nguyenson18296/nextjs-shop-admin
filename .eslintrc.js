@@ -57,6 +57,7 @@ module.exports = {
     ],
 
     // Deactivated
+    '@typescript-eslint/no-unsafe-call': 'off',
     'eslint-comments/require-description': 'off',
     '@typescript-eslint/dot-notation': 'off', // paths are used with a dot notation
     '@typescript-eslint/no-misused-promises': 'off', // onClick with async fails

@@ -29,7 +29,7 @@ const schema = zod.object({
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { email: 'sofia@devias.io', password: 'Secret1' } satisfies Values;
+// const defaultValues = { email: 'sofia@devias.io', password: 'Secret1' } satisfies Values;
 
 export function SignInForm(): React.JSX.Element {
   const router = useRouter();
@@ -45,7 +45,7 @@ export function SignInForm(): React.JSX.Element {
     handleSubmit,
     setError,
     formState: { errors },
-  } = useForm<Values>({ defaultValues, resolver: zodResolver(schema) });
+  } = useForm<Values>({ resolver: zodResolver(schema) });
 
   const onSubmit = React.useCallback(
     async (values: Values): Promise<void> => {
@@ -59,12 +59,14 @@ export function SignInForm(): React.JSX.Element {
         return;
       }
 
+      router.push("/dashboard");
+
       // Refresh the auth state
       await checkSession?.();
 
       // UserProvider, for this case, will not refresh the router
       // After refresh, GuestGuard will handle the redirect
-      router.refresh();
+      // router.refresh();
     },
     [checkSession, router, setError]
   );

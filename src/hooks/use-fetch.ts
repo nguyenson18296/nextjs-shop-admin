@@ -1,5 +1,6 @@
 /* eslint-disable eslint-comments/require-description */
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Status = 'idle' | 'fetching' | 'error' | 'fetched';
 type HTTPMethod = 'POST' | 'PUT' | 'GET' | 'DELETE';
@@ -17,6 +18,8 @@ function useFetchData<T = unknown>(url: string, method: HTTPMethod = 'GET'): Use
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [status, setStatus] = useState<Status>('idle');
+  const token = localStorage.getItem('custom-auth-token') || '';
+  const router = useRouter();
 
   const fetchData = useCallback(async () => {
     setStatus('fetching');
@@ -29,9 +32,13 @@ function useFetchData<T = unknown>(url: string, method: HTTPMethod = 'GET'): Use
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
       });
       if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/auth/dang-nhap')
+        }
         throw new Error('Network response was not ok');
       }
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -42,7 +49,7 @@ function useFetchData<T = unknown>(url: string, method: HTTPMethod = 'GET'): Use
       setError(err as Error);
       setStatus('error');
     }
-  }, [method, url]);
+  }, [method, url, router, token]);
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
