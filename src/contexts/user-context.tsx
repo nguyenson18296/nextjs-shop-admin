@@ -1,5 +1,4 @@
 'use client';
-
 import * as React from 'react';
 
 import type { User } from '@/types/user';
@@ -37,6 +36,7 @@ export function UserProvider({ children }: UserProviderProps): React.JSX.Element
       }
 
       setState((prev) => ({ ...prev, user: data ?? null, error: null, isLoading: false }));
+      // router.push("/dashboard");
     } catch (err) {
       logger.error(err);
       setState((prev) => ({ ...prev, user: null, error: 'Something went wrong', isLoading: false }));

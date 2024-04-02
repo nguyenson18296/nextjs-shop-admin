@@ -11,3 +11,10 @@ export interface TableColumnInterface {
 export interface TableColumnContent {
     value: string | number | React.ReactElement;
 }
+
+export interface DataResponseBase {
+    success: boolean;
+    status: 200;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any;
+}

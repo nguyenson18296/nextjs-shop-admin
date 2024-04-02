@@ -15,9 +15,11 @@ import NotificationsComponent from '@/components/notifications/Notifications';
 
 import { MobileNav } from './mobile-nav';
 import { UserPopover } from './user-popover';
+import { useUser } from '@/hooks/use-user';
 
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
+  const { user } = useUser();
 
   const userPopover = usePopover<HTMLDivElement>();
 
@@ -63,7 +65,7 @@ export function MainNav(): React.JSX.Element {
             <Avatar
               onClick={userPopover.handleOpen}
               ref={userPopover.anchorRef}
-              src="/assets/avatar.png"
+              src={user?.avatar}
               sx={{ cursor: 'pointer' }}
             />
           </Stack>
