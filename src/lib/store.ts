@@ -1,12 +1,14 @@
 import { configureStore } from '@reduxjs/toolkit'
 
 import notificationReducer from './store/notifications.slice';
+import categoryReducer from './store/categories.slice';
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const makeStore = () => {
   return configureStore({
     reducer: {
       notification: notificationReducer,
+      category: categoryReducer,
     },
   })
 }

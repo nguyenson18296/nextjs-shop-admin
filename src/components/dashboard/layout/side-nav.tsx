@@ -130,11 +130,11 @@ function renderNavItems({ items = [], pathname }: { items?: NavItemConfig[]; pat
   );
 }
 
-interface NavItemProps extends Omit<NavItemConfig, 'items'> {
+interface NavItemProps extends NavItemConfig {
   pathname: string;
 }
 
-function NavItem({ disabled, external, href, icon, matcher, pathname, title }: NavItemProps): React.JSX.Element {
+function NavItem({ disabled, external, href, icon, matcher, pathname, title, items }: NavItemProps): React.JSX.Element {
   const active = isNavItemActive({ disabled, external, href, matcher, pathname });
   const Icon = icon ? navIcons[icon] : null;
 
@@ -185,6 +185,47 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title }: N
           >
             {title}
           </Typography>
+        </Box>
+      </Box>
+      <Box>
+        <Box
+          sx={{
+            borderLeft: '1px solid #434a60',
+            paddingLeft: '12px'
+          }}
+        >
+          <ul>
+            {items?.map(childItem => (
+              <Box
+              key={childItem.key}
+              {...(childItem.href
+                ? {
+                    component: external ? 'a' : RouterLink,
+                    href: childItem.href,
+                    target: external ? '_blank' : undefined,
+                    rel: external ? 'noreferrer' : undefined,
+                  }
+                : { role: 'button' })}
+              sx={{
+                alignItems: 'center',
+                borderRadius: 1,
+                color: 'var(--NavItem-color)',
+                cursor: 'pointer',
+                display: 'flex',
+                flex: '0 0 auto',
+                gap: 1,
+                p: '6px 16px',
+                position: 'relative',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+               <li>
+                {childItem.title}
+              </li>
+            </Box>
+            ))}
+          </ul>
         </Box>
       </Box>
     </li>

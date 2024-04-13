@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+import { BASE_URL, type CategoryInterface } from '@/utils/constants';
 import { formatVndCurrency } from '@/utils/format';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -17,13 +18,14 @@ import dayjs from 'dayjs';
 import io from 'socket.io-client';
 
 import { type TableColumnInterface } from '@/types/common';
-import useFetchData from '@/hooks/use-fetch';
-import { useSelection } from '@/hooks/use-selection';
-import { TableComponent } from '@/components/table/Table';
-import { ProductFormDialog } from './products-form-dialog';
-import { BASE_URL, type CategoryInterface } from '@/utils/constants';
-import { useAppDispatch } from '@/hooks/use-redux';
+import { getCategories } from '@/lib/store/categories.slice';
 import { updateNewNotification, type NotificationInterface } from '@/lib/store/notifications.slice';
+import useFetchData from '@/hooks/use-fetch';
+import { useAppDispatch } from '@/hooks/use-redux';
+import { useSelection } from '@/hooks/use-selection';
+import { TableComponent, type FilterItem } from '@/components/table/Table';
+
+import { ProductFormDialog } from './products-form-dialog';
 
 function noop(): void {
   // do nothing
@@ -42,13 +44,54 @@ export interface ProductInterface {
 
 export function CustomersTable(): React.JSX.Element {
   const { data: products } = useFetchData<{ data: ProductInterface[]; total: number }>('/products', 'GET');
+  const { data: categories } = useFetchData<CategoryInterface[]>('/categories', 'GET');
   const [openEdit, setOpenEdit] = React.useState(false);
   const [selectedProduct, setSelectedProduct] = React.useState<ProductInterface>();
+  const [activeTabFilter, setActiveTabFilter] = React.useState(0);
+  const [tabsFilter, setTabsFilter] = React.useState<FilterItem[]>([]);
+
   const dispatch = useAppDispatch();
 
   const rowIds = React.useMemo(() => {
     return (products?.data || []).map((customer) => customer.id);
   }, [products?.data]);
+
+  React.useEffect(() => {
+    if (!categories || categories.length === 0) return;
+
+    const allFilter: FilterItem = {
+      id: 0,
+      label: 'Tất cả',
+      count: products?.data.length || 0
+    };
+
+    const otherFilter: FilterItem = {
+      id: Infinity,
+      label: 'Khác',
+      count: products?.data.filter(item => !item.category).length || 0
+    };
+
+    const newCategories: FilterItem[] = categories.map(item => ({
+      id: item.id,
+      label: item.title,
+      count: 0
+    }));
+
+    if (products && products.data.length > 0) {
+      for (const product of products.data) {
+        const category = product.category?.id;
+        const foundCategory = newCategories.find(item => item.id === category);
+        if (foundCategory) {
+          foundCategory.count += 1;
+        }
+      }
+    }
+
+    const newTabsFilter = [...newCategories, allFilter, otherFilter].sort((a, b) => a.id - b.id);
+    setTabsFilter(newTabsFilter);
+    setActiveTabFilter(newTabsFilter[0].id);
+  }, [categories, products]);
+
 
   const { selectAll, deselectAll, selectOne, deselectOne, selected } = useSelection(rowIds);
 
@@ -56,9 +99,13 @@ export function CustomersTable(): React.JSX.Element {
   const selectedAll = (products?.data || []).length > 0 && selected?.size === (products?.data || []).length;
 
   React.useEffect(() => {
+    dispatch(getCategories(categories || []));
+  }, [categories, dispatch]);
+
+  React.useEffect(() => {
     // Initialize WebSocket connection
     const socket = io(BASE_URL); // Use your server's address
-    
+
     // Setup event listener for 'notification' events
     socket.on('notificationToClient', (notificationData: NotificationInterface) => {
       dispatch(updateNewNotification(notificationData));
@@ -95,6 +142,10 @@ export function CustomersTable(): React.JSX.Element {
     {
       id: 'title',
       label: 'Tên sản phẩm',
+    },
+    {
+      id: 'category',
+      label: 'Phân loại',
     },
     {
       id: 'slug',
@@ -147,6 +198,13 @@ export function CustomersTable(): React.JSX.Element {
     {
       key: 'title',
       content: (value: string) => <TableCell>{value}</TableCell>,
+    },
+    {
+      key: 'category',
+      content: (value: CategoryInterface) => {
+        const data = value?.title || '';
+        return <TableCell>{data}</TableCell>;
+      },
     },
     {
       key: 'slug',
@@ -207,6 +265,19 @@ export function CustomersTable(): React.JSX.Element {
     [products?.data]
   );
 
+  const onSwitchFilterTab = React.useCallback((id: number) => {
+    setActiveTabFilter(id);
+  }, []);
+
+  const dataFiltered = React.useMemo(() => {
+    if (activeTabFilter > 0 && activeTabFilter !== Infinity) {
+      return products?.data.filter(data => data.category?.id === activeTabFilter);
+    } else if (activeTabFilter === Infinity) {
+      return products?.data.filter(data => !data.category);
+    }
+    return products?.data;
+  }, [activeTabFilter, products?.data]);
+
   return (
     <>
       {selectedProduct && openEdit ? (
@@ -215,7 +286,14 @@ export function CustomersTable(): React.JSX.Element {
       <Card>
         <Box sx={{ overflowX: 'auto' }}>
           {products?.data ? (
-            <TableComponent columns={columns} dataFormatted={dataFormatted} data={products?.data ?? []} />
+            <TableComponent
+              columns={columns}
+              dataFormatted={dataFormatted}
+              data={dataFiltered || []}
+              filters={tabsFilter}
+              activeFilter={activeTabFilter}
+              onSwitchFilterTab={onSwitchFilterTab}
+            />
           ) : null}
         </Box>
         <Divider />
