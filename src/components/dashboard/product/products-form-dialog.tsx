@@ -11,13 +11,13 @@ import Alert, { type AlertColor } from '@mui/material/Alert';
 import CheckIcon from '@mui/icons-material/Check';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 
-import useFetchData from '@/hooks/use-fetch';
 import { generateSlug } from '@/utils/format';
 import { DialogComponent } from '@/components/Dialog/Dialog';
 import { BASE_URL } from '@/utils/constants';
 import TextArea from '@/components/TextArea/TextArea';
 
 import { type ProductInterface } from './products-table';
+import { useAppSelector } from '@/hooks/use-redux';
 
 type TFormInput = ProductInterface;
 
@@ -44,7 +44,7 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
   const { handleSubmit, control, getValues, setValue, formState } = useForm<TFormInput>({
     defaultValues: product,
   });
-  const { data: categories } = useFetchData<CategoryInterface[]>(`/categories`);
+  const categories = useAppSelector(state => state.category.categories);
 
   const [thumbnail, setThumbnail] = useState(product?.thumbnail || '');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -204,7 +204,7 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
             </FormControl>
             <Stack spacing={2}>
               <FormLabel>Hình ảnh sản phẩm:</FormLabel>
-              {selectedImage ? <Image
+              {selectedImage || thumbnail ? <Image
                   src={thumbnail}
                   alt={product?.title ?? ''}
                   width={200}

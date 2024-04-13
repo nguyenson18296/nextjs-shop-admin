@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from 'react';
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import Chip from '@mui/material/Chip';
 
 import { type TableColumnInterface } from '@/types/common';
 
@@ -14,15 +16,58 @@ export interface TableRow {
   [key: string]: string | number | boolean | React.ReactElement;
 }
 
+export interface FilterItem {
+  id: number;
+  label: string;
+  count: number;
+}
+
 interface TableComponentInterface {
   columns: TableColumnInterface[];
   data: TableRow[] | any[];
   dataFormatted: FormatTable[];
+  filters: FilterItem[];
+  activeFilter: number;
+  onSwitchFilterTab: (id: number) => void;
 }
 
-export function TableComponent({ columns, dataFormatted, data }: TableComponentInterface): React.JSX.Element {
+const CustomTabs = styled(Tabs)({
+  paddingRight: '24px',
+  paddingLeft: '24px',
+  minHeight: '48px',
+  display: 'flex',
+  overflow: 'hidden'
+})
+
+const CustomTabItem = styled(Tab)({
+  '&:not(:first-child)': {
+    marginLeft: '8px'
+  },
+  '.inner-tab': {
+    display: 'flex',
+    alignItems: 'center',
+
+    '.items-count': {
+      marginLeft: '8px'
+    }
+  }
+})
+
+export function TableComponent({ columns, dataFormatted, data, filters, activeFilter, onSwitchFilterTab }: TableComponentInterface): React.JSX.Element {
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+      <div>
+        <CustomTabs value={activeFilter}>
+          {filters.map((filter) => (
+             <CustomTabItem value={filter.id} key={filter.id} label={(
+                <div className='inner-tab'>
+                  {filter.label}
+                  <Chip label={filter.count} className='items-count' />
+                </div>
+              )} onClick={() => { onSwitchFilterTab(filter.id); }} />
+          ))}
+        </CustomTabs>
+      </div>
       <TableContainer sx={{ maxHeight: 540 }}>
         <Table stickyHeader sx={{ minWidth: 750 }} aria-label="sticky table">
           <TableHead>
@@ -40,7 +85,7 @@ export function TableComponent({ columns, dataFormatted, data }: TableComponentI
               return (
                 <TableRow key={item.id}>
                   {dataFormatted.map((f) => {
-                    return f.content(item[f.key] as string, item.id)
+                    return f.content(item[f.key] as string, item.id as string)
                   })}
                 </TableRow>
               );
