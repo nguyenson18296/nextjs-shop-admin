@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Chip from '@mui/material/Chip';
@@ -36,7 +36,11 @@ const CustomTabs = styled(Tabs)({
   paddingLeft: '24px',
   minHeight: '48px',
   display: 'flex',
-  overflow: 'hidden'
+  overflow: 'auto',
+
+  '.MuiTabs-flexContainer': {
+    overflow: 'auto',
+  }
 })
 
 const CustomTabItem = styled(Tab)({

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import Image from 'next/image';
-import { BASE_URL, CategoryInterface } from '@/utils/constants';
+import { BASE_URL, type CategoryInterface } from '@/utils/constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PartyModeIcon from '@mui/icons-material/PartyMode';
