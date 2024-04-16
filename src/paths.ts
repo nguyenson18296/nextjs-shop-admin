@@ -7,7 +7,7 @@ export const paths = {
     customers: '/dashboard/san-pham',
     categories: '/dashboard/phan-loai',
     createCategories: '/dashboard/phan-loai/tao-moi',
-    integrations: '/dashboard/integrations',
+    blogs: '/dashboard/tin-tuc',
     settings: '/dashboard/settings',
   },
   errors: { notFound: '/errors/not-found' },
