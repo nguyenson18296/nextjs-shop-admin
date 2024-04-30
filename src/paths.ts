@@ -8,6 +8,7 @@ export const paths = {
     categories: '/dashboard/phan-loai',
     createCategories: '/dashboard/phan-loai/tao-moi',
     blogs: '/dashboard/tin-tuc',
+    createBlogs: '/dashboard/tin-tuc/create',
     settings: '/dashboard/settings',
   },
   errors: { notFound: '/errors/not-found' },

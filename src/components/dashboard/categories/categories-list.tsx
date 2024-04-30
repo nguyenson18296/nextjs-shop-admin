@@ -71,8 +71,6 @@ export default function CategoriesList(): React.JSX.Element {
   const dispatch = useAppDispatch();
   const categoriesState = useAppSelector((state) => state.category.categories);
 
-  // console.log("categoriesState", categoriesState);
-
   const getCategories = useCallback(() => {
     if (categories && categories?.length > 0) dispatch(getCategoriesSaveState(categories));
   }, [dispatch, categories]);
