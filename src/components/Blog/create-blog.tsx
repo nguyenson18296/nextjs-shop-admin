@@ -1,14 +1,13 @@
- 
- 
 'use client';
 
-import React, { type ChangeEvent, useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState, type ChangeEvent } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation'
 
-import 'quill/dist/quill.snow.css';
-
+import { BASE_URL } from '@/utils/constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Avatar,
   Box,
@@ -25,19 +24,15 @@ import {
 import OutlinedInput from '@mui/material/OutlinedInput';
 import { Controller, useForm } from 'react-hook-form';
 import { z as zod } from 'zod';
-import LoadingButton from '@mui/lab/LoadingButton';
 
 import { TextEditor } from '../TextEditor/text-editor';
-import { BASE_URL } from '@/utils/constants';
+import { useSnackbar } from '@/contexts/use-snackbar-context';
+import { type PostItemInterface } from './ListBlog/list-blog';
 
-interface PostInterface {
-  id: number;
-  title: string;
-  short_description: string;
-  seo_title: string;
-  seo_description: string;
-  cover_photo: string;
-  content: string;
+interface CreateBlogResponseInterface {
+  statusCode: number;
+  message: string;
+  data?: PostItemInterface;
 }
 
 const PaperStyled = styled(Paper)({
@@ -121,6 +116,9 @@ export function CreateBlog(): React.JSX.Element {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { showSnackbar } = useSnackbar();
+  const router = useRouter()
+  const token = localStorage.getItem('custom-auth-token') || '';
 
   const inputFile = useRef<HTMLInputElement | null>(null);
 
@@ -144,35 +142,46 @@ export function CreateBlog(): React.JSX.Element {
     setContent(contentCb);
   }, []);
 
-  const onSubmit = useCallback(async (data: Values) => {
-    setIsLoading(true);
-    const formData = new FormData();
-    if (selectedImage) {
-      formData.append('thumbnail', selectedImage);
-    }
-    formData.append('content', content);
-    for (const key in data) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const value = data[key];
-      if (typeof value === 'string') {
-        formData.append(key, value);
-      } else if (value instanceof Blob) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        formData.append(key, value, value.name);
+  const onSubmit = useCallback(
+    async (data: Values) => {
+      setIsLoading(true);
+      const formData = new FormData();
+      if (selectedImage) {
+        formData.append('thumbnail', selectedImage);
       }
-    }
-    try {
-      const response = await fetch(`${BASE_URL}/posts`, {
-        method: "POST",
-        body: formData
-      });
-      await response.json() as PostInterface;
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('Create failed', e);
-    }
-    setIsLoading(false);
-  }, [selectedImage, content]);
+      formData.append('content', content);
+      for (const key in data) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const value = data[key];
+        if (typeof value === 'string') {
+          formData.append(key, value);
+        } else if (value instanceof Blob) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          formData.append(key, value, value.name);
+        }
+      }
+      try {
+        const response = await fetch(`${BASE_URL}/posts`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData,
+        });
+        const dataResponse = await response.json() as CreateBlogResponseInterface;
+        if (dataResponse.statusCode === 401) {
+          showSnackbar('Tạo bài viết thất bại, vui lòng thử lại', 'error')
+        } else {
+          showSnackbar('Tạo bài viết thành công', 'success')
+          router.push('/dashboard/tin-tuc');
+        }
+      } catch (e) {
+        showSnackbar('Tạo bài viết thất bại, vui lòng thử lại', 'error')
+      }
+      setIsLoading(false);
+    },
+    [selectedImage, content, showSnackbar, router]
+  );
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -192,7 +201,9 @@ export function CreateBlog(): React.JSX.Element {
                       <FormControl>
                         <InputLabel htmlFor="title">Tiêu đề</InputLabel>
                         <OutlinedInput error={Boolean(errors.title)} id="title" label="Tiêu đề" {...field} />
-                        {errors.title ? <FormHelperText error={Boolean(errors.title)}>{errors.title.message}</FormHelperText> : null}
+                        {errors.title ? (
+                          <FormHelperText error={Boolean(errors.title)}>{errors.title.message}</FormHelperText>
+                        ) : null}
                       </FormControl>
                     )}
                   />
@@ -202,9 +213,16 @@ export function CreateBlog(): React.JSX.Element {
                     render={({ field }) => (
                       <FormControl sx={{ marginTop: '24px' }}>
                         <InputLabel htmlFor="short_description">Thông tin mô tả ngắn gọn</InputLabel>
-                        <OutlinedInput error={Boolean(errors.short_description)} id="short_description" label="Thông tin mô tả ngắn gọn" {...field} />
+                        <OutlinedInput
+                          error={Boolean(errors.short_description)}
+                          id="short_description"
+                          label="Thông tin mô tả ngắn gọn"
+                          {...field}
+                        />
                         {errors.short_description ? (
-                          <FormHelperText error={Boolean(errors.short_description)}>{errors.short_description.message}</FormHelperText>
+                          <FormHelperText error={Boolean(errors.short_description)}>
+                            {errors.short_description.message}
+                          </FormHelperText>
                         ) : null}
                       </FormControl>
                     )}
@@ -223,17 +241,18 @@ export function CreateBlog(): React.JSX.Element {
               <Grid item xs={9}>
                 <Stack direction="column" gap={3}>
                   {selectedImageUrl ? (
-                    <Image
-                      alt="title"
-                      src={selectedImageUrl}
-                      height={230}
-                      width={635}
-                      style={{ width: '100%' }}
-                    />
+                    <Image alt="title" src={selectedImageUrl} height={230} width={635} style={{ width: '100%' }} />
                   ) : null}
                   <Stack>
                     <UploadBox onClick={onBrowsImage}>
-                      <input onChange={onChangeCoverPhoto} accept="image/*" ref={inputFile} tabIndex={-1} type="file" hidden />
+                      <input
+                        onChange={onChangeCoverPhoto}
+                        accept="image/*"
+                        ref={inputFile}
+                        tabIndex={-1}
+                        type="file"
+                        hidden
+                      />
                       <Stack direction="row">
                         <UploadIcon>
                           <CloudUploadIcon />
@@ -290,7 +309,9 @@ export function CreateBlog(): React.JSX.Element {
                       <FormControl>
                         <InputLabel htmlFor="seo_title">SEO title</InputLabel>
                         <OutlinedInput error={Boolean(errors.seo_title)} id="seo_title" label="SEO title" {...field} />
-                        {errors.seo_title ? <FormHelperText error={Boolean(errors.seo_title)}>{errors.seo_title.message}</FormHelperText> : null}
+                        {errors.seo_title ? (
+                          <FormHelperText error={Boolean(errors.seo_title)}>{errors.seo_title.message}</FormHelperText>
+                        ) : null}
                       </FormControl>
                     )}
                   />
@@ -300,9 +321,16 @@ export function CreateBlog(): React.JSX.Element {
                     render={({ field }) => (
                       <FormControl sx={{ marginTop: '24px' }}>
                         <InputLabel htmlFor="seo_description">SEO description</InputLabel>
-                        <OutlinedInput error={Boolean(errors.seo_description)} id="seo_description" label="SEO description" {...field} />
+                        <OutlinedInput
+                          error={Boolean(errors.seo_description)}
+                          id="seo_description"
+                          label="SEO description"
+                          {...field}
+                        />
                         {errors.seo_description ? (
-                          <FormHelperText error={Boolean(errors.seo_description)}>{errors.seo_description.message}</FormHelperText>
+                          <FormHelperText error={Boolean(errors.seo_description)}>
+                            {errors.seo_description.message}
+                          </FormHelperText>
                         ) : null}
                       </FormControl>
                     )}

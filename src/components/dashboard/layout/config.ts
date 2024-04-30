@@ -17,7 +17,19 @@ export const navItems = [
       },
     ],
   },
-  { key: 'news', title: 'Tin tức', href: paths.dashboard.blogs, icon: 'news' },
+  { key: 'news', title: 'Tin tức', href: paths.dashboard.blogs, icon: 'news',
+  items: [
+    {
+      key: 'list-posts',
+      title: 'Danh sách bài viết',
+      href: paths.dashboard.blogs,
+    },
+    {
+      key: 'create-post',
+      title: 'Tạo bài viết',
+      href: paths.dashboard.createBlogs,
+    },
+  ],},
   { key: 'settings', title: 'Settings', href: paths.dashboard.settings, icon: 'gear-six' },
   { key: 'account', title: 'Account', href: paths.dashboard.account, icon: 'user' },
   { key: 'error', title: 'Error', href: paths.errors.notFound, icon: 'x-square' },
