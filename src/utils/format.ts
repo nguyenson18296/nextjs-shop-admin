@@ -9,3 +9,7 @@ export const generateSlug = (inputString: string): string => {
     .replace(/[^a-z0-9-]/g, '') // Remove all non-alphanumeric characters except hyphens
     .replace(/^-+|-+$/g, ''); // Trim hyphens from start and end
 };
+
+export const isImageFile = (file: File): boolean => {
+  return file.type.startsWith('image/');
+}

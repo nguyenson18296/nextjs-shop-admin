@@ -1,11 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React, { useCallback, useState } from 'react';
-import Image from 'next/image';
 import { type CategoryInterface } from '@/utils/constants';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Button, FormControl, FormLabel, IconButton, MenuItem, Select, Stack, TextField } from '@mui/material';
 import DialogActions from '@mui/material/DialogActions';
-import { styled } from '@mui/material/styles';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import Alert, { type AlertColor } from '@mui/material/Alert';
 import CheckIcon from '@mui/icons-material/Check';
@@ -15,6 +12,7 @@ import { generateSlug } from '@/utils/format';
 import { DialogComponent } from '@/components/Dialog/Dialog';
 import { BASE_URL } from '@/utils/constants';
 import TextArea from '@/components/TextArea/TextArea';
+import { DragDropZone } from '@/components/DragDropZone/DragDropZone';
 
 import { type ProductInterface } from './products-table';
 import { useAppSelector } from '@/hooks/use-redux';
@@ -28,25 +26,12 @@ interface ProductFormDialogInterface {
   isEdit?: boolean;
 }
 
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
-  height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  whiteSpace: 'nowrap',
-  width: 1,
-});
-
 export function ProductFormDialog({ open, isEdit = false, handleClose, product }: ProductFormDialogInterface): React.JSX.Element {
   const { handleSubmit, control, getValues, setValue, formState } = useForm<TFormInput>({
     defaultValues: product,
   });
   const categories = useAppSelector(state => state.category.categories);
 
-  const [thumbnail, setThumbnail] = useState(product?.thumbnail || '');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [editState, setEditState] = useState({
     color: '',
@@ -54,16 +39,7 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
     message: ''
   })
 
-  const onUploadNewThumbnail = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const file = event?.target?.files[0];
-      if (file) {
-        const objectUrl = URL.createObjectURL(file);
-        setThumbnail(objectUrl);
-        setSelectedImage(file);
-      }
-    }
-  }, []);
+  console.log('formState', formState.errors)
 
   const onSubmit: SubmitHandler<TFormInput> = useCallback(async (submitData: TFormInput) => {
       const formData = new FormData();
@@ -103,19 +79,28 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
 
   const onEdit: SubmitHandler<TFormInput> = useCallback(
     async (submitData) => {
-      // Append all keys and their corresponding values from the data object
-      const data = {
-        ...submitData,
-        user_id: 2
-      };
+      const formData = new FormData();
+      console.log('selectedImage', selectedImage);
+      if (selectedImage) {
+        formData.append('thumbnail', selectedImage);
+      }
+      for (const key in submitData) {
+        const value = submitData[key];
+        if (typeof value === 'string') {
+          formData.append(key, value);
+        } else if (value instanceof Blob) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          formData.append(key, value, value.name);
+        }
+      }
       try {
         await fetch(`${BASE_URL}/products/${product?.id.toString() || ''}`, {
           method: 'PUT',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
+          // headers: {
+          //   Accept: 'application/json',
+          //   'Content-Type': 'application/json',
+          // },
+          body: formData,
         });
         setEditState({
           color: 'success',
@@ -132,7 +117,7 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
         // Handle upload error
       }
     },
-    [product?.id]
+    [product?.id, selectedImage]
   );
 
   const genSlug = useCallback(() => {
@@ -202,27 +187,9 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
                 )}
               />
             </FormControl>
-            <Stack spacing={2}>
+            <Stack spacing={4}>
               <FormLabel>Hình ảnh sản phẩm:</FormLabel>
-              {selectedImage || thumbnail ? <Image
-                  src={thumbnail}
-                  alt={product?.title ?? ''}
-                  width={200}
-                  height={200}
-                  style={{
-                    border: '1px solid gray',
-                  }}
-                /> : null}
-              <Button
-                component="label"
-                role={undefined}
-                variant="contained"
-                tabIndex={-1}
-                startIcon={<CloudUploadIcon />}
-              >
-                Upload file
-                <VisuallyHiddenInput type="file" onChange={onUploadNewThumbnail} />
-              </Button>
+              <DragDropZone image={product?.thumbnail} setSelectedImage={setSelectedImage} />
             </Stack>
             <FormControl>
               <Controller
