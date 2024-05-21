@@ -10,13 +10,16 @@ import "./styles.scss";
 
 interface TextEditorInterface {
   onChange: (content: string) => void;
+  defaultValue?: string;
 }
 
 export function TextEditor({
+  defaultValue,
   onChange
 }: TextEditorInterface): React.JSX.Element {
   const editorRef = useRef<HTMLDivElement | null>(null); // Create a ref for the editor container
   const quillRef = useRef<Quill | null>(null);  // To store the Quill instance
+  const initialValueRef = useRef(defaultValue || '');
 
   const imageHandler = (): void => {
     const editor = quillRef.current;
@@ -83,6 +86,12 @@ export function TextEditor({
         }
       }
     })
+
+    const insertInitialValue = () => {
+      quillRef.current?.clipboard.dangerouslyPasteHTML(0, initialValueRef.current);
+      quillRef.current?.blur();
+    };
+    insertInitialValue();
 
     // const handlePaste = (e: ClipboardEvent): void => {
     //   const clipboardData = e.clipboardData || window['ClipboardEvent'].clipboardData;

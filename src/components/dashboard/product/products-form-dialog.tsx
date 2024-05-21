@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { type CategoryInterface } from '@/utils/constants';
 import { Button, FormControl, FormLabel, IconButton, MenuItem, Select, Stack, TextField } from '@mui/material';
 import DialogActions from '@mui/material/DialogActions';
@@ -13,6 +13,7 @@ import { DialogComponent } from '@/components/Dialog/Dialog';
 import { BASE_URL } from '@/utils/constants';
 import TextArea from '@/components/TextArea/TextArea';
 import { DragDropZone } from '@/components/DragDropZone/DragDropZone';
+import { TextEditor } from '@/components/TextEditor/text-editor';
 
 import { type ProductInterface } from './products-table';
 import { useAppSelector } from '@/hooks/use-redux';
@@ -38,12 +39,17 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
     show: false,
     message: ''
   })
+  const [content, setContent] = useState('');
 
-  console.log('formState', formState.errors)
+  useEffect(() => {
+    const { description } = getValues();
+    setContent(description)
+  }, [getValues]);
 
   const onSubmit: SubmitHandler<TFormInput> = useCallback(async (submitData: TFormInput) => {
       const formData = new FormData();
       if (selectedImage) {
+        formData.append('description', content)
         formData.append('thumbnail', selectedImage);
       }
       for (const key in submitData) {
@@ -75,32 +81,33 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
         })
         // Handle upload error
       }
-  }, [selectedImage]);
+  }, [selectedImage, content]);
 
   const onEdit: SubmitHandler<TFormInput> = useCallback(
     async (submitData) => {
-      const formData = new FormData();
-      console.log('selectedImage', selectedImage);
-      if (selectedImage) {
-        formData.append('thumbnail', selectedImage);
-      }
-      for (const key in submitData) {
-        const value = submitData[key];
-        if (typeof value === 'string') {
-          formData.append(key, value);
-        } else if (value instanceof Blob) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          formData.append(key, value, value.name);
-        }
-      }
+      // const formData = new FormData();
+      // console.log('content', content)
+      // if (selectedImage) {
+      //   formData.append('thumbnail', selectedImage);
+      // }
+      submitData.description = content
+      // for (const key in submitData) {
+      //   const value = submitData[key];
+      //   if (typeof value === 'string') {
+      //     formData.append(key, value);
+      //   } else if (value instanceof Blob) {
+      //     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      //     formData.append(key, value, value.name);
+      //   }
+      // }
       try {
         await fetch(`${BASE_URL}/products/${product?.id.toString() || ''}`, {
           method: 'PUT',
-          // headers: {
-          //   Accept: 'application/json',
-          //   'Content-Type': 'application/json',
-          // },
-          body: formData,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(submitData),
         });
         setEditState({
           color: 'success',
@@ -117,13 +124,17 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
         // Handle upload error
       }
     },
-    [product?.id, selectedImage]
+    [product?.id, content]
   );
 
   const genSlug = useCallback(() => {
     const slug = generateSlug(getValues().title);
     setValue('slug', slug);
   }, [setValue, getValues]);
+
+  const onChangeContent = useCallback((contentCb: string) => {
+    setContent(contentCb);
+  }, []);
 
   return (
     <DialogComponent open={open} handleClose={handleClose} headerText="Chỉnh sửa sản phẩm">
@@ -160,7 +171,7 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
             </FormControl>
             <FormControl fullWidth>
               <Controller
-                name='description'
+                name='short_description'
                 control={control}
                 rules={{ required: true }}
                 render={({ field }) => (
@@ -170,6 +181,20 @@ export function ProductFormDialog({ open, isEdit = false, handleClose, product }
                   />
                 )}
               />
+            </FormControl>
+            <FormControl fullWidth>
+              <TextEditor onChange={onChangeContent} defaultValue={content} />
+              {/* <Controller
+                name='description'
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <TextArea
+                    error={Boolean(formState.errors['description'])}
+                    field={field}
+                  />
+                )}
+              /> */}
             </FormControl>
             <FormControl fullWidth>
               <Controller

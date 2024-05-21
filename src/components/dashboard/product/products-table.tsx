@@ -31,29 +31,35 @@ function noop(): void {
   // do nothing
 }
 
+interface ProductsTableInterface {
+  setSelectedProductsProps: (products: ProductInterface[]) => void;
+}
+
 export interface ProductInterface {
   id: number;
   title: string;
   slug: string;
   thumbnail: string;
+  short_description: string;
   description: string;
   price: string;
   discount_price: string;
   category?: CategoryInterface;
 }
 
-export function CustomersTable(): React.JSX.Element {
+export function ProductsTable({ setSelectedProductsProps }: ProductsTableInterface): React.JSX.Element {
   const { data: products } = useFetchData<{ data: ProductInterface[]; total: number }>('/products', 'GET');
   const { data: categories } = useFetchData<CategoryInterface[]>('/categories', 'GET');
   const [openEdit, setOpenEdit] = React.useState(false);
   const [selectedProduct, setSelectedProduct] = React.useState<ProductInterface>();
+  const [selectedProducts, setSelectedProducts] = React.useState<ProductInterface[]>([]);
   const [activeTabFilter, setActiveTabFilter] = React.useState(0);
   const [tabsFilter, setTabsFilter] = React.useState<FilterItem[]>([]);
 
   const dispatch = useAppDispatch();
 
   const rowIds = React.useMemo(() => {
-    return (products?.data || []).map((customer) => customer.id);
+    return (products?.data || []).map((product) => product.id);
   }, [products?.data]);
 
   React.useEffect(() => {
@@ -62,25 +68,25 @@ export function CustomersTable(): React.JSX.Element {
     const allFilter: FilterItem = {
       id: 0,
       label: 'Tất cả',
-      count: products?.data.length || 0
+      count: products?.data.length || 0,
     };
 
     const otherFilter: FilterItem = {
       id: Infinity,
       label: 'Khác',
-      count: products?.data.filter(item => !item.category).length || 0
+      count: products?.data.filter((item) => !item.category).length || 0,
     };
 
-    const newCategories: FilterItem[] = categories.map(item => ({
+    const newCategories: FilterItem[] = categories.map((item) => ({
       id: item.id,
       label: item.title,
-      count: 0
+      count: 0,
     }));
 
     if (products && products.data.length > 0) {
       for (const product of products.data) {
         const category = product.category?.id;
-        const foundCategory = newCategories.find(item => item.id === category);
+        const foundCategory = newCategories.find((item) => item.id === category);
         if (foundCategory) {
           foundCategory.count += 1;
         }
@@ -91,7 +97,6 @@ export function CustomersTable(): React.JSX.Element {
     setTabsFilter(newTabsFilter);
     setActiveTabFilter(newTabsFilter[0].id);
   }, [categories, products]);
-
 
   const { selectAll, deselectAll, selectOne, deselectOne, selected } = useSelection(rowIds);
 
@@ -118,6 +123,29 @@ export function CustomersTable(): React.JSX.Element {
       socket.close();
     };
   }, [dispatch]); // Empty dependency array means this effect runs once on mount
+
+  const onSelectProduct = React.useCallback(
+    (value: number) => {
+      selectOne(value);
+      let cloneArr = [...selectedProducts];
+      if (cloneArr.map((item) => item.id).includes(value)) {
+        cloneArr = cloneArr.filter((product) => product.id !== value);
+      } else {
+        const product = products?.data.find((product) => product.id === value);
+        if (product) {
+          cloneArr = cloneArr.concat(product);
+        }
+      }
+      setSelectedProducts(cloneArr);
+    },
+    [selectOne, products, selectedProducts]
+  );
+
+  React.useEffect(() => {
+    if (selectedProducts) {
+      setSelectedProductsProps(selectedProducts);
+    }
+  }, [selectedProducts, setSelectedProductsProps]);
 
   const columns: TableColumnInterface[] = [
     {
@@ -184,7 +212,7 @@ export function CustomersTable(): React.JSX.Element {
               value={value}
               onChange={(event) => {
                 if (event.target.checked) {
-                  selectOne(value);
+                  onSelectProduct(value);
                 } else {
                   deselectOne(value);
                 }
@@ -271,9 +299,9 @@ export function CustomersTable(): React.JSX.Element {
 
   const dataFiltered = React.useMemo(() => {
     if (activeTabFilter > 0 && activeTabFilter !== Infinity) {
-      return products?.data.filter(data => data.category?.id === activeTabFilter);
+      return products?.data.filter((data) => data.category?.id === activeTabFilter);
     } else if (activeTabFilter === Infinity) {
-      return products?.data.filter(data => !data.category);
+      return products?.data.filter((data) => !data.category);
     }
     return products?.data;
   }, [activeTabFilter, products?.data]);
