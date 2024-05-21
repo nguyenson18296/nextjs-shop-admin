@@ -94,12 +94,6 @@ const schema = zod.object({
   seo_description: zod.string({
     required_error: 'Không được để trống',
   }),
-  // cover_photo: zod.string({
-  //   required_error: 'Không được để trống',
-  // }),
-  // content: zod.string({
-  //   required_error: 'Không được để trống',
-  // })
 });
 
 type Values = zod.infer<typeof schema>;
