@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import styled from '@emotion/styled';
-import { Avatar, Box, Stack, Typography, FormHelperText } from '@mui/material';
-
 import { isImageFile } from '@/utils/format';
+import styled from '@emotion/styled';
+import { Avatar, Box, FormHelperText, Stack, Typography } from '@mui/material';
 
 const CustomBox = styled(Box)({
   WebkitBoxAlign: 'center',
@@ -47,56 +46,70 @@ const CustomAvatar = styled(Avatar)({
 });
 
 interface DragDropZoneInterface {
-  image?: string;
-  setSelectedImage: (value: React.SetStateAction<File | null>) => void;
+  allowMultiple?: boolean;
+  images?: string[];
+  setSelectedImages: (value: React.SetStateAction<File[] | File | null>) => void;
 }
 
-export function DragDropZone({ image, setSelectedImage }: DragDropZoneInterface): React.JSX.Element {
-  const [thumbnail, setThumbnail] = useState<string>('');
+export function DragDropZone({
+  images,
+  setSelectedImages,
+  allowMultiple = false,
+}: DragDropZoneInterface): React.JSX.Element {
+  const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [error, setError] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-      if (image) {
-        setThumbnail(image)
-      }
-  }, [image]);
+    if (images?.length) {
+      setThumbnails(images);
+    }
+  }, [images]);
 
   const onBrowseFile = useCallback(() => {
     fileRef.current?.click();
   }, []);
 
-  const onUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const file = event?.target?.files[0];
-      if (file) {
-        const objectUrl = URL.createObjectURL(file);
-        setThumbnail(objectUrl);
-        setSelectedImage(file);
+  const onUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (event.target.files) {
+        if (event.target.files) {
+          for (const file of event.target.files) {
+            handleFiles(file);
+          }
+        }
       }
-    }
-  }, [setSelectedImage]);
+    },
+    []
+  );
 
   // Handle files
-  const handleFiles = useCallback((file: File) => {
-    const isImage = isImageFile(file);
-    if (isImage) {
-      const objectUrl = URL.createObjectURL(file);
-      setThumbnail(objectUrl);
-      setSelectedImage(file)
-    } else {
-      setError(!isImage);
-    }
-  }, [setSelectedImage]);
+  const handleFiles = useCallback(
+    (file: File) => {
+      const isImage = isImageFile(file);
+      if (isImage) {
+        console.log('file', file)
+        const objectUrl = URL.createObjectURL(file);
+        setThumbnails(prevState => [...prevState, objectUrl]);
+        setSelectedImages(prevState => [...prevState, file]);
+      } else {
+        setError(!isImage);
+      }
+    },
+    [setSelectedImages]
+  );
 
   // Handle file drop
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const files = e.dataTransfer.files;
-    // Handle dropped files
-    handleFiles(files[0]);
-  }, [handleFiles]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const files = e.dataTransfer.files;
+      // Handle dropped files
+      handleFiles(files[0]);
+    },
+    [handleFiles]
+  );
 
   const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -107,20 +120,34 @@ export function DragDropZone({ image, setSelectedImage }: DragDropZoneInterface)
     setIsDragOver(false);
   }, []);
 
+  const isMultiImages = useMemo(() => thumbnails.length > 1, [thumbnails]);
+
+  const renderThumbnail = useMemo(() => {
+    if (isMultiImages) {
+      return (
+        <Stack direction="row" gap={2}>
+          {thumbnails?.length > 0 ? (
+            <>
+              {thumbnails?.map((item, index) => (
+                <Image key={index} alt="img" width={100} height={100} src={item} className="w-100px h-100px" />
+              ))}
+            </>
+          ) : (
+            <Typography>Chưa có hình ảnh</Typography>
+          )}
+        </Stack>
+      );
+    }
+    return thumbnails.length > 0 ? (
+      <Image alt="img" width={500} height={200} src={thumbnails[0]} className="w-full h-200px" />
+    ) : (
+      <Typography>Chưa có hình ảnh</Typography>
+    )
+  }, [isMultiImages, thumbnails]);
+
   return (
     <>
-      {thumbnail ? (
-        <Image
-          style={{
-            width: '100%',
-          }}
-          alt="img"
-          width={500}
-          height={200}
-          src={thumbnail}
-          className="w-full h-200px"
-        />
-      ) : null}
+      {renderThumbnail}
       <Stack
         direction="column"
         gap={2}
@@ -134,7 +161,7 @@ export function DragDropZone({ image, setSelectedImage }: DragDropZoneInterface)
           onDragLeave={onDragLeave}
           onDrop={handleDrop}
           sx={{
-            background: isDragOver ? 'rgba(0, 0, 0, 0.04)' : '#fff'
+            background: isDragOver ? 'rgba(0, 0, 0, 0.04)' : '#fff',
           }}
         >
           <input
@@ -144,6 +171,7 @@ export function DragDropZone({ image, setSelectedImage }: DragDropZoneInterface)
             onChange={onUpload}
             style={{ display: 'none' }}
             ref={fileRef}
+            multiple={allowMultiple}
           />
           <Stack direction="row" gap={4} alignItems="center">
             <CustomAvatar />
@@ -173,9 +201,7 @@ export function DragDropZone({ image, setSelectedImage }: DragDropZoneInterface)
             </Stack>
           </Stack>
         </CustomBox>
-        {error ? <FormHelperText error>
-            Định dạng file không đúng
-          </FormHelperText> : null}
+        {error ? <FormHelperText error>Định dạng file không đúng</FormHelperText> : null}
       </Stack>
     </>
   );

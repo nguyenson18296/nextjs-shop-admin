@@ -102,7 +102,7 @@ export function OrdersTable(): React.JSX.Element {
     {
       key: 'id',
       content: (value: number) => {
-        const isSelected = selected?.has(value);
+        const isSelected = selected?.has(value.toString());
         return (
           <TableCell padding="checkbox">
             <Checkbox
@@ -167,7 +167,12 @@ export function OrdersTable(): React.JSX.Element {
       <Card>
         <Box sx={{ overflowX: 'auto' }}>
           {orders?.data ? (
-            <TableComponent columns={columns} dataFormatted={dataFormatted} filters={[]} data={orders.data} />
+            <TableComponent
+              columns={columns}
+              dataFormatted={dataFormatted}
+              filters={[]}
+              data={orders.data}
+            />
           ) : null}
         </Box>
       </Card>

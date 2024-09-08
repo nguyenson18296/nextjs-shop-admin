@@ -1,29 +1,39 @@
-import React from 'react';
-import Link from 'next/link';
 import { Avatar, CardMedia, Paper, Stack, Typography } from '@mui/material';
+import { notFound } from 'next/navigation'
 
-import { type PostItemInterface } from './list-blog';
+import { BASE_URL } from "@/utils/constants"
 
-export function ListBlogItem({ post }: { post: PostItemInterface }): React.JSX.Element {
+export const dynamicParams = true
+export const dynamic = 'auto'
+
+export default async function Page({
+  params: { id },
+}: { params: { id: string }}): Promise<React.JSX.Element> {
+  const response = await fetch(`${BASE_URL}/posts/${id}`)
+  const post = await response.json();
+
+  if (post.statusCode === 404) {
+    return notFound();
+  }
+
   return (
-    <Link href={`/dashboard//tin-tuc/${post.slug}`}>
-      <Paper elevation={2}>
-        <CardMedia component="img" height={280} image={post.cover_photo} alt={post.title} />
-        <Stack
+    <Paper elevation={2}>
+       <CardMedia component="img" height={280} image={post.cover_photo} alt={post.title} />
+       <Stack
           sx={{
             padding: 2,
           }}
           spacing={2}
         >
           <Typography variant="h5">{post.title}</Typography>
+          
           <Typography
             component="p"
             sx={{
               color: '#667085',
             }}
-          >
-            {post.short_description}
-          </Typography>
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
           <Stack
             useFlexGap
             direction="row"
@@ -46,7 +56,6 @@ export function ListBlogItem({ post }: { post: PostItemInterface }): React.JSX.E
             <Typography>{post.created_at}</Typography>
           </Stack>
         </Stack>
-      </Paper>
-    </Link>
-  );
+    </Paper>
+  )
 }
