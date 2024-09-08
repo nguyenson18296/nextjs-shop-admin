@@ -51,7 +51,7 @@ export function OrderDetails({
   status,
 }: OrderDetailsInterface): React.JSX.Element {
   return (
-    <Dialog open={open} onClose={onClose} TransitionComponent={Transition}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" TransitionComponent={Transition}>
       <IconButton
         aria-label="close"
         onClick={onClose}
