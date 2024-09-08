@@ -32,7 +32,7 @@ function noop(): void {
 }
 
 interface ProductsTableInterface {
-  setSelectedProductsProps: (products: ProductInterface[]) => void;
+  setSelectedProductsProps?: (products: ProductInterface[]) => void;
 }
 
 export interface ProductInterface {
@@ -40,6 +40,7 @@ export interface ProductInterface {
   title: string;
   slug: string;
   thumbnail: string;
+  images: string[] | null;
   short_description: string;
   description: string;
   price: string;
@@ -143,7 +144,7 @@ export function ProductsTable({ setSelectedProductsProps }: ProductsTableInterfa
 
   React.useEffect(() => {
     if (selectedProducts) {
-      setSelectedProductsProps(selectedProducts);
+      setSelectedProductsProps?.(selectedProducts);
     }
   }, [selectedProducts, setSelectedProductsProps]);
 

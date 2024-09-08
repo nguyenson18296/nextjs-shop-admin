@@ -2,11 +2,11 @@ import * as React from 'react';
 import { TextareaAutosize as BaseTextareaAutosize } from '@mui/base/TextareaAutosize';
 import { styled } from '@mui/system';
 
-export default function MinHeightTextarea({ field }: {
+export default function MinHeightTextarea({ props }: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    field: any;
-    error?: boolean;
+    props: any
 }): React.JSX.Element {
+  console.log('props', props.name)
   const blue = {
     100: '#DAECFF',
     200: '#b6daff',
@@ -62,6 +62,6 @@ export default function MinHeightTextarea({ field }: {
   );
 
   return (
-    <Textarea aria-label="minimum height" minRows={3} placeholder="Mô tả sản phẩm" {...field} />
+    <Textarea aria-label="minimum height" minRows={3} placeholder="Mô tả sản phẩm" {...props} />
   );
 }

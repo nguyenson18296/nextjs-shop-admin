@@ -6,9 +6,9 @@ import Chip from '@mui/material/Chip';
 
 import { type TableColumnInterface } from '@/types/common';
 
-interface FormatTable {
+interface FormatTable<T> {
   key: string;
-  content: (...values: string[]) => React.ReactElement;
+  content: (...values: T[]) => React.ReactElement;
 }
 
 export interface TableRow {
@@ -22,13 +22,13 @@ export interface FilterItem {
   count: number;
 }
 
-interface TableComponentInterface {
+interface TableComponentInterface<T> {
   columns: TableColumnInterface[];
   data: TableRow[] | any[];
-  dataFormatted: FormatTable[];
+  dataFormatted: FormatTable<T>[];
   filters: FilterItem[];
-  activeFilter: number;
-  onSwitchFilterTab: (id: number) => void;
+  activeFilter?: number;
+  onSwitchFilterTab?: (id: number) => void;
 }
 
 const CustomTabs = styled(Tabs)({
@@ -57,7 +57,7 @@ const CustomTabItem = styled(Tab)({
   }
 })
 
-export function TableComponent({ columns, dataFormatted, data, filters, activeFilter, onSwitchFilterTab }: TableComponentInterface): React.JSX.Element {
+export function TableComponent({ columns, dataFormatted, data, filters, activeFilter, onSwitchFilterTab }: TableComponentInterface<any>): React.JSX.Element {
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
       <div>
@@ -68,7 +68,7 @@ export function TableComponent({ columns, dataFormatted, data, filters, activeFi
                   {filter.label}
                   <Chip label={filter.count} className='items-count' />
                 </div>
-              )} onClick={() => { onSwitchFilterTab(filter.id); }} />
+              )} onClick={() => { onSwitchFilterTab?.(filter.id); }} />
           ))}
         </CustomTabs>
       </div>

@@ -38,7 +38,7 @@ export const navItems = [
   {
     key: 'orders',
     title: 'Đơn mua',
-    href: paths.dashboard.categories,
+    href: paths.dashboard.orders,
     icon: 'category',
     items: [
       {
