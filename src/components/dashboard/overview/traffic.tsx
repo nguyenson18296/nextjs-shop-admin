@@ -15,8 +15,10 @@ import { Phone as PhoneIcon } from '@phosphor-icons/react/dist/ssr/Phone';
 import type { ApexOptions } from 'apexcharts';
 
 import { Chart } from '@/components/core/chart';
+import { useOrders, type IOrder } from '@/api/orders';
 
 const iconMapping = { Desktop: DesktopIcon, Tablet: DeviceTabletIcon, Phone: PhoneIcon } as Record<string, Icon>;
+const ORDER_LABELS = ['PENDING', 'CANCELED', 'COMPLETED'];
 
 export interface TrafficProps {
   chartSeries: number[];
@@ -24,18 +26,27 @@ export interface TrafficProps {
   sx?: SxProps;
 }
 
-export function Traffic({ chartSeries, labels, sx }: TrafficProps): React.JSX.Element {
-  const chartOptions = useChartOptions(labels);
+export function Traffic({ chartSeries, sx }: TrafficProps): React.JSX.Element {
+  const chartOptions = useChartOptions(ORDER_LABELS);
+
+  const { ordersReport } = useOrders();
+
+  const mapOrdersToChartSeries = React.useMemo(() => {
+    return ORDER_LABELS.map((label) => {
+      const orders = (ordersReport.data?.data || []).filter((order: IOrder) => order.payment_status === label);
+      return Math.round((orders.length / (ordersReport.data?.data?.length || 1)) * 100);
+    });
+  }, [ordersReport.data])
 
   return (
     <Card sx={sx}>
-      <CardHeader title="Traffic source" />
+      <CardHeader title="Thống kê số lượng orders" />
       <CardContent>
         <Stack spacing={2}>
           <Chart height={300} options={chartOptions} series={chartSeries} type="donut" width="100%" />
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'center' }}>
-            {chartSeries.map((item, index) => {
-              const label = labels[index];
+            {mapOrdersToChartSeries.map((item, index) => {
+              const label = ORDER_LABELS[index];
               const Icon = iconMapping[label];
 
               return (

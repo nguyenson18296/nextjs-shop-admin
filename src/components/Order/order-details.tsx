@@ -15,11 +15,11 @@ import {
 } from '@mui/material';
 import { type TransitionProps } from '@mui/material/transitions';
 
-import { type UserInterface } from '@/types/user';
-
 import { type ProductOrderType } from './create-order-form';
 import { OrderLineItems } from './order-line-items';
-import OrderStatus, { type TPaymentStatus } from './order-status';
+import OrderStatus from './order-status';
+import { type TPaymentStatus } from '@/api/orders/types';
+import type { IBuyerInfo, IOrderItem } from '@/api/orders/types';
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
@@ -34,8 +34,8 @@ const Transition = React.forwardRef(function Transition(
 interface OrderDetailsInterface {
   canModify?: boolean;
   open?: boolean;
-  productsDisplay: ProductOrderType[];
-  buyerInfo?: UserInterface;
+  productsDisplay: IOrderItem[];
+  buyerInfo?: IBuyerInfo;
   onClose?: () => void;
   issuedDate?: string;
   status?: TPaymentStatus;

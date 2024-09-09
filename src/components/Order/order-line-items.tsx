@@ -1,39 +1,41 @@
-import React, { useMemo } from "react"
-import {
-  Box,
-  Divider,
-  Stack,
-  Typography,
-  FormHelperText
-} from '@mui/material';
-import { type FieldErrors } from "react-hook-form";
+import React, { useMemo } from 'react';
+import { IOrderItem } from '@/api/orders/types';
+import { Box, Divider, FormHelperText, Stack, Typography } from '@mui/material';
+import { type FieldErrors } from 'react-hook-form';
 
-import { ProductOrderItems } from "./product-order-item";
-import { type ProductOrderType, type FormInputInterface } from "./create-order-form";
+import { type FormInputInterface } from './create-order-form';
+import { ProductOrderItems } from './product-order-item';
 
 interface OrderLineItemsInterface {
   canModify?: boolean;
-  productsDisplay: ProductOrderType[];
-  setProductDisplay?: React.Dispatch<React.SetStateAction<ProductOrderType[]>>;
-  errors?: FieldErrors<FormInputInterface>
+  productsDisplay: IOrderItem[];
+  setProductDisplay?: React.Dispatch<React.SetStateAction<IOrderItem[]>>;
+  errors?: FieldErrors<FormInputInterface>;
 }
 
 export function OrderLineItems({
   canModify = true,
   errors,
   setProductDisplay,
-  productsDisplay
+  productsDisplay,
 }: OrderLineItemsInterface): React.JSX.Element {
-
   console.log('productsDisplay', productsDisplay);
 
   const subTotal = useMemo(
-    () => productsDisplay.reduce((partialSum, { price }) => partialSum + Number(price), 0),
+    () =>
+      productsDisplay.reduce(
+        (partialSum, { quantity, product: { price } }) => partialSum + Number(price) * quantity,
+        0
+      ),
     [productsDisplay]
   );
   const subTotalDiscount = useMemo(
-  // eslint-disable-next-line camelcase
-    () => productsDisplay.reduce((partialSum, { discount_price }) => partialSum + Number(discount_price), 0),
+    // eslint-disable-next-line camelcase
+    () =>
+      productsDisplay.reduce(
+        (partialSum, { quantity, product: { discount_price } }) => partialSum + Number(discount_price) * quantity,
+        0
+      ),
     [productsDisplay]
   );
 
@@ -41,10 +43,12 @@ export function OrderLineItems({
     <Stack spacing={2}>
       <Stack spacing={3}>
         <Typography component="h6">Danh sách sản phẩm</Typography>
-        <ProductOrderItems canModify={canModify} productsDisplay={productsDisplay} setProductDisplay={setProductDisplay} />
-        {errors?.products ? <FormHelperText error>
-            {errors?.['products'].message}
-          </FormHelperText> : null}
+        <ProductOrderItems
+          canModify={canModify}
+          productsDisplay={productsDisplay}
+          setProductDisplay={setProductDisplay}
+        />
+        {errors?.products ? <FormHelperText error>{errors?.['products'].message}</FormHelperText> : null}
       </Stack>
       <Divider />
       <Box display="flex" justifyContent="flex-end">
@@ -72,5 +76,5 @@ export function OrderLineItems({
         </Stack>
       </Box>
     </Stack>
-  )
+  );
 }
