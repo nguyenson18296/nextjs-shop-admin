@@ -4,8 +4,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import { Chip } from "@mui/material";
-
-export type TPaymentStatus = 'COMPLETED' | 'PENDING' | 'CANCELED' | 'REJECTED';
+import { TPaymentStatus } from "@/api/orders/types";
 
 interface OrderStatusInterface {
   status?: TPaymentStatus;

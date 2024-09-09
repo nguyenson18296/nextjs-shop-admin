@@ -7,11 +7,14 @@ import { alpha, styled } from '@mui/material/styles';
 import Tooltip from '@mui/material/Tooltip';
 import { Bell as BellIcon } from '@phosphor-icons/react/dist/ssr/Bell';
 import dayjs from 'dayjs';
+import io from 'socket.io-client';
+import { BASE_URL } from '@/utils/constants';
 
 import { getNotifications } from '@/lib/store/notifications.slice';
 import { type NotificationResponseInterface } from './notificationType';
 import { useAppDispatch, useAppSelector } from '@/hooks/use-redux';
 import useFetchData from '@/hooks/use-fetch';
+import { updateNewNotification, type NotificationInterface } from '@/lib/store/notifications.slice';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
 const relativeTime = require('dayjs/plugin/relativeTime');
@@ -80,6 +83,23 @@ export default function NotificationsComponent(): React.JSX.Element {
   const handleClose = (): void => {
     setAnchorEl(null);
   };
+
+  React.useEffect(() => {
+    // Initialize WebSocket connection
+    const socket = io(BASE_URL); // Use your server's address
+
+    // Setup event listener for 'notification' events
+    socket.on('notificationToClient', (notificationData: NotificationInterface) => {
+      dispatch(updateNewNotification(notificationData));
+      // Handle notification data (e.g., display a notification)
+    });
+
+    // Cleanup on component unmount
+    return () => {
+      socket.off('notification');
+      socket.close();
+    };
+  }, [dispatch]); // Empty dependency array means this effect runs once on mount
 
   const getMyNotification = React.useCallback(async () => {
     try {

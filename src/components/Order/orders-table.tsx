@@ -1,9 +1,9 @@
 'use client';
 
 /* eslint-disable react/no-unstable-nested-components */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
-import { Avatar, Box, Card, Checkbox, IconButton, Stack, TableCell, Typography } from '@mui/material';
+import { Avatar, Box, Card, Checkbox, IconButton, Stack, TableCell, TablePagination, Typography } from '@mui/material';
 
 import { type TableColumnInterface } from '@/types/common';
 import { type UserInterface } from '@/types/user';
@@ -14,26 +14,26 @@ import { type ProductInterface } from '../dashboard/product/products-table';
 import { TableComponent } from '../table/Table';
 import { OrderDetails } from './order-details';
 import OrderStatus from './order-status';
-
-interface OrderInterface {
-  id: string;
-  order_number: string;
-  issued_date: string;
-  payment_status: 'PENDING';
-  buyer_info: UserInterface;
-  order_items: {
-    id: string;
-    quantity: number;
-    product: ProductInterface;
-  }[];
-}
-
-type TPaymentStatus = 'COMPLETED' | 'PENDING' | 'CANCELED' | 'REJECTED';
+import { TPaymentStatus } from '@/api/orders/types';
+import { useOrders, type IOrder } from '@/api/orders';
 
 export function OrdersTable(): React.JSX.Element {
-  const { data: orders } = useFetchData<{ data: OrderInterface[]; total: number }>('/orders', 'GET');
+  const [pagination, setPagination] = useState<{ page: number; limit: number }>({ page: 1, limit: 10 });
+  // const { data: orders } = useFetchData<{ data: OrderInterface[]; total: number; page: number; limit: number; }>(`/orders?page=${pagination.page}&limit=${pagination.limit}`, 'GET');
   const [open, setOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<OrderInterface | null>();
+  const [selectedOrder, setSelectedOrder] = useState<IOrder | null>();
+  const [orders, setOrders] = useState<{ data: IOrder[]; total: number; page: number; limit: number } | null>(null);
+
+  const { getOrders } = useOrders();
+
+  const fetchOrders = useCallback(async () => {
+    const data = await getOrders(`page=${pagination.page}&limit=${pagination.limit}`);
+    setOrders(data);
+  }, [pagination]);
+  
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const rowIds = useMemo(() => {
     return (orders?.data || []).map((order) => order.id);
@@ -58,6 +58,15 @@ export function OrdersTable(): React.JSX.Element {
   const onCloseOrderDetail = useCallback(() => {
     setOpen(false);
     setSelectedOrder(null);
+  }, []);
+
+  const onPageChange = useCallback((_event: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
+    console.log('page', page);
+    setPagination((prev) => ({ ...prev, page: page + 1 }));
+  }, []);
+
+  const onRowsPerPageChange = useCallback((event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setPagination((prev) => ({ ...prev, limit: Number(event.target.value) }));
   }, []);
 
   const columns: TableColumnInterface[] = [
@@ -167,12 +176,17 @@ export function OrdersTable(): React.JSX.Element {
       <Card>
         <Box sx={{ overflowX: 'auto' }}>
           {orders?.data ? (
-            <TableComponent
-              columns={columns}
-              dataFormatted={dataFormatted}
-              filters={[]}
-              data={orders.data}
-            />
+            <>
+              <TableComponent columns={columns} dataFormatted={dataFormatted} filters={[]} data={orders.data} />
+              <TablePagination
+                component="div"
+                count={orders.total}
+                page={pagination.page - 1}
+                rowsPerPage={pagination.limit}
+                onPageChange={onPageChange}
+                onRowsPerPageChange={onRowsPerPageChange}
+              />
+            </>
           ) : null}
         </Box>
       </Card>
@@ -185,14 +199,7 @@ export function OrdersTable(): React.JSX.Element {
           issuedDate={selectedOrder?.issued_date}
           status={selectedOrder?.payment_status}
           productsDisplay={
-            selectedOrder?.order_items.map((item) => ({
-              id: item.product.id,
-              quantity: item.quantity,
-              price: item.product.price,
-              discount_price: item.product.discount_price,
-              title: item.product.title,
-              thumbnail: item.product.thumbnail,
-            })) || []
+            selectedOrder?.order_items || []
           }
         />
       ) : null}

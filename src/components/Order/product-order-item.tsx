@@ -25,6 +25,7 @@ import { alpha, styled } from '@mui/material/styles';
 import { ProductsTable, type ProductInterface } from '../dashboard/product/products-table';
 import { ModalComponent } from '../Modal/Modal';
 import { type ProductOrderType } from './create-order-form';
+import { type IOrderItem } from '@/api/orders/types';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -82,8 +83,8 @@ const BootstrapInput = styled(InputBase)(({ theme }) => ({
 
 interface ProductOrderItemsInterface {
   canModify?: boolean;
-  productsDisplay: ProductOrderType[];
-  setProductDisplay?: React.Dispatch<React.SetStateAction<ProductOrderType[]>>;
+  productsDisplay: IOrderItem[];
+  setProductDisplay?: React.Dispatch<React.SetStateAction<IOrderItem[]>>;
 }
 
 interface QuantityInputInterface {
@@ -154,12 +155,19 @@ export function ProductOrderItems({
   }, []);
 
   const addItem = useCallback(() => {
-    const transferProductsDisplay: ProductOrderType[] = products.map((item) => ({
-      id: item.id,
+    const transferProductsDisplay: IOrderItem[] = products.map((item) => ({
+      id: item.id.toString(),
       title: item.title,
-      thumbnail: item.thumbnail,
-      discount_price: item.discount_price,
-      price: item.price,
+      product: {
+        id: item.id.toString(),
+        thumbnail: item.thumbnail,
+        discount_price: item.discount_price,
+        slug: item.slug,
+        title: item.title,
+        price: item.price,
+        short_description: item.short_description,
+        description: item.description,
+      },
       quantity: 1,
     }));
     setProductDisplay?.((prevState) => {
@@ -183,7 +191,7 @@ export function ProductOrderItems({
 
   const handleInputChange = useCallback(
     (index: number, value: number) => {
-      setProductDisplay?.((prevData: ProductOrderType[]) => {
+      setProductDisplay?.((prevData: IOrderItem[]) => {
         const newData = [...prevData];
         newData[index].quantity = value;
         return newData;
@@ -192,14 +200,14 @@ export function ProductOrderItems({
     [setProductDisplay]
   );
 
-  const getTotalPrice = useCallback((item: ProductOrderType) => {
-    return Number(item.discount_price ?? item.price) * item.quantity;
+  const getTotalPrice = useCallback((item: IOrderItem) => {
+    return Number(item.product.discount_price ?? item.product.price) * item.quantity;
   }, []);
 
   const onRemoveItem = useCallback(
     (id: number) => {
       const arr = [...productsDisplay];
-      setProductDisplay?.(arr.filter((item) => item.id !== id));
+      setProductDisplay?.(arr.filter((item) => +item.id !== id));
     },
     [productsDisplay, setProductDisplay]
   );
@@ -223,8 +231,8 @@ export function ProductOrderItems({
               <StyledTableRow key={product.id}>
                 <StyledTableCell width="40%">
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Avatar src={product.thumbnail} alt={product.title} />
-                    <span>{product.title}</span>
+                    <Avatar src={product.product.thumbnail} alt={product.product.title} />
+                    <span>{product.product.title}</span>
                   </Stack>
                 </StyledTableCell>
                 <StyledTableCell width="10%">
@@ -239,15 +247,15 @@ export function ProductOrderItems({
                     product.quantity
                   )}
                 </StyledTableCell>
-                <StyledTableCell>{product.price}</StyledTableCell>
-                <StyledTableCell>{product.discount_price}</StyledTableCell>
+                <StyledTableCell>{product.product.price}</StyledTableCell>
+                <StyledTableCell>{product.product.discount_price}</StyledTableCell>
                 <StyledTableCell>{getTotalPrice(product)}</StyledTableCell>
                 {canModify ? (
                   <StyledTableCell>
                     <IconButton
                       aria-label="delete"
                       onClick={() => {
-                        onRemoveItem(product.id);
+                        onRemoveItem(+product.product.id);
                       }}
                     >
                       <DeleteIcon />
