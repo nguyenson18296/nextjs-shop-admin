@@ -28,15 +28,25 @@ export interface TrafficProps {
 
 export function Traffic({ chartSeries, sx }: TrafficProps): React.JSX.Element {
   const chartOptions = useChartOptions(ORDER_LABELS);
+  const [ordersReport, setOrdersReport] = React.useState<IOrder[]>([]);
 
-  const { ordersReport } = useOrders();
+  const { getOrdersReport } = useOrders();
+
+  const fetchData = React.useCallback(async () => {
+    const data = await getOrdersReport();
+    setOrdersReport(data.data);
+  }, []);
+
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const mapOrdersToChartSeries = React.useMemo(() => {
     return ORDER_LABELS.map((label) => {
-      const orders = (ordersReport.data?.data || []).filter((order: IOrder) => order.payment_status === label);
-      return Math.round((orders.length / (ordersReport.data?.data?.length || 1)) * 100);
+      const orders = (ordersReport || []).filter((order: IOrder) => order.payment_status === label);
+      return Math.round((orders.length / (ordersReport.length || 1)) * 100);
     });
-  }, [ordersReport.data])
+  }, [ordersReport])
 
   return (
     <Card sx={sx}>

@@ -48,6 +48,19 @@ export const navItems = [
       },
     ],
   },
+  {
+    key: 'vouchers',
+    title: 'Vouchers',
+    href: paths.dashboard.vouchers,
+    icon: 'tag',
+    items: [
+      {
+        key: 'create-voucher',
+        title: 'Tạo voucher',
+        href: paths.dashboard.vouchers,
+      },
+    ]
+  },
   { key: 'settings', title: 'Settings', href: paths.dashboard.settings, icon: 'gear-six' },
   { key: 'account', title: 'Account', href: paths.dashboard.account, icon: 'user' },
   { key: 'error', title: 'Error', href: paths.errors.notFound, icon: 'x-square' },

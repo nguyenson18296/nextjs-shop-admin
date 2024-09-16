@@ -149,8 +149,6 @@ export function ProductFormDialog({
     [product?.id, selectedImage, selectedSubImages, content, handleClose]
   );
 
-  console.log('form', formState.errors);
-
   const genSlug = useCallback(() => {
     const slug = generateSlug(getValues().title);
     setValue('slug', slug);
@@ -161,7 +159,6 @@ export function ProductFormDialog({
   }, []);
 
   const onChangeCategory = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log('event', event.target.value)
     setValue('category.id', +event.target.value);
   }, [setValue])
 

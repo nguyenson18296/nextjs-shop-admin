@@ -25,6 +25,7 @@ export interface IOrderItem {
 
 export interface IOrder {
   id: string;
+  order_number: string;
   payment_status: TPaymentStatus;
   total: number;
   created_at: string;
