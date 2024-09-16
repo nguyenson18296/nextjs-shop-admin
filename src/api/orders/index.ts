@@ -1,4 +1,4 @@
-import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useQueryClient } from '@tanstack/react-query';
 
 import { type ListDataResponse } from '@/types/common';
 import { api } from '@/lib/api-client';
@@ -50,6 +50,7 @@ const useOrders = () => {
     },
     // Query for getting orders
     getOrders: async (params?: string) => {
+      console.log('params', params)
       return await queryClient.fetchQuery({
         ...getOrdersQueryOptions(params),
       });

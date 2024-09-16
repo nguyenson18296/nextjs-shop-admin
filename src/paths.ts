@@ -11,6 +11,7 @@ export const paths = {
     orders: '/dashboard/don-mua',
     createOrder: '/dashboard/don-mua/create',
     createBlogs: '/dashboard/tin-tuc/create',
+    vouchers: '/dashboard/vouchers',
     settings: '/dashboard/settings',
   },
   errors: { notFound: '/errors/not-found' },

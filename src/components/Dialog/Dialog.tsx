@@ -4,6 +4,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import { styled } from '@mui/material/styles';
+import { Button, DialogActions } from '@mui/material';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiPaper-root': {
@@ -22,11 +23,19 @@ export function DialogComponent({
   handleClose,
   headerText,
   children,
+  isConfirmPopup = false,
+  submitButtonText,
+  isLoading,
+  onSubmit
 }: {
   open?: boolean;
   handleClose: () => void;
   headerText?: string;
   children: React.ReactElement;
+  isConfirmPopup?: boolean;
+  submitButtonText?: string;
+  onSubmit?: () => void;
+  isLoading?: boolean;
 }): React.JSX.Element {
   return (
     <BootstrapDialog
@@ -44,6 +53,13 @@ export function DialogComponent({
         <DialogContent dividers>
           {children}
         </DialogContent>
+        {isConfirmPopup && (
+          <DialogActions>
+            <Button variant="contained" onClick={onSubmit} disabled={isLoading}>
+              {submitButtonText}
+            </Button>
+          </DialogActions>
+        )}
         <Divider />
     </BootstrapDialog>
   );
